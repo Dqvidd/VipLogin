@@ -1,0 +1,14 @@
+name: VipLogin
+version: '1.0'
+main: me.gmip.vipLogin.VipLogin
+api-version: '1.21'
+authors: [ Dqvidd ]
+description: Efectos al entrar para los usuarios Vips
+commands:
+  viplogin:
+    description: 'Comando para recargar el plugin VipLogin'
+    usage: /description <reload>
+permissions:
+  viplogin.reload:
+    description: "Permiso para recargar la configuración del plugin"
+    default: op
