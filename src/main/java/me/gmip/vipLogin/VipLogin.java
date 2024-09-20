@@ -8,6 +8,7 @@ public final class VipLogin extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        System.out.println("El plugin VipLogin ha sido cargado!");
         saveDefaultConfig();
         reloadConfig();
 
@@ -17,7 +18,6 @@ public final class VipLogin extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        System.out.println("El plugin VipLogin ha sido desactivado!");
     }
-
 }

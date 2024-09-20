@@ -2,89 +2,102 @@ package me.gmip.vipLogin;
 
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
+import java.util.Set;
 
 public class JoinEffects {
 
     private final JavaPlugin plugin;
 
+    private String sound;
+    private double volume;
+    private double pitch;
+    private boolean lightning;
+    private String particle;
+    private int particleAmount;
+    private double offsetX;
+    private double offsetY;
+    private double offsetZ;
+    private double optionalValue;
+    private String node;
+    private File file;
+    private FileConfiguration config;
+
     public JoinEffects(JavaPlugin plugin) {
         this.plugin = plugin;
     }
 
+
     public void playsound(Player player) {
-        String group = getPlayerGroup(player);
-        String path = "effects." + group;
-
-        String soundConfig = plugin.getConfig().getString(path + ".sound");
-        float volume = (float) plugin.getConfig().getDouble(path + ".volume");
-        float pitch = (float) plugin.getConfig().getDouble(path + ".pitch");
-
-        if (soundConfig == null) {
-            plugin.getLogger().warning("El nombre del sonido no está configurado para el grupo: " + group);
+        if (sound == null) {
             return;
         }
 
         try {
-            Sound sound = Sound.valueOf(soundConfig.toUpperCase());
-            player.playSound(player.getLocation(), sound, volume, pitch);
+            Sound finalSound = Sound.valueOf(sound.toUpperCase());
+            player.playSound(player.getLocation(), finalSound, (float) volume, (float) pitch);
         } catch (IllegalArgumentException ex) {
-            plugin.getLogger().warning("El sonido configurado '" + soundConfig + "' para el grupo '" + group + "' no es válido.");
+            plugin.getLogger().warning("El sonido configurado '" + sound + "' para el grupo '" + node + "' no es válido.");
         }
-    }
-
-    public boolean lightning(Player player) {
-        String group = getPlayerGroup(player);
-        String path = "effects." + group + ".lightning";
-        return plugin.getConfig().getBoolean(path, false); // Ponemos por defecto false para no generar errores
     }
 
     public void particleeffect(Player player) {
-        String group = getPlayerGroup(player);
-
-        // Definimos las rutas del config.yml
-        String pathParticle = "effects." + group + ".particle";
-        String pathNumber = "effects." + group + ".number";
-        String pathOffsetX = "effects." + group + ".offsetX";
-        String pathOffsetY = "effects." + group + ".offsetY";
-        String pathOffsetZ = "effects." + group + ".offsetZ";
-        String pathSpeed = "effects." + group + ".optionalvalue";
-
-        // Obtenemos la partícula y comprobamos que exista, si no existe generamos un error y acabamos la función (Usando el valueOf)
-        String particleConfig = plugin.getConfig().getString(pathParticle).toUpperCase();
-        Particle particle;
-        try {
-            particle = Particle.valueOf(particleConfig);
-        } catch (IllegalArgumentException e) {
-            plugin.getLogger().warning("Partícula inválida en la config: " + particleConfig);
+        if (particle == null) {
             return;
         }
 
-        // Obtenemos los parámetros de la config y spawneamos la partícula
-        int number = plugin.getConfig().getInt(pathNumber, 20);
-        double offsetX = plugin.getConfig().getDouble(pathOffsetX, 1.0);
-        double offsetY = plugin.getConfig().getDouble(pathOffsetY, 1.0);
-        double offsetZ = plugin.getConfig().getDouble(pathOffsetZ, 1.0);
-        double optionalvalue = plugin.getConfig().getDouble(pathSpeed, 0.1);
+        Particle particlefinal;
+        try {
+            particlefinal = Particle.valueOf(particle);
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Partícula inválida en la config: " + particle);
+            return;
+        }
 
-        player.getWorld().spawnParticle(particle, player.getLocation(), number, offsetX, offsetY, offsetZ, optionalvalue);
+        player.getWorld().spawnParticle(particlefinal, player.getLocation(), particleAmount, offsetX, offsetY, offsetZ, optionalValue);
+
     }
 
-    private String getPlayerGroup(Player player) {
-
-        // Ordenado en sentido descendente de el que tiene más permisos al que menos.
-        // Esto se hace por los parents de cada grupo, para evitar que se ejecute el de otro grupo
-
-        if (player.hasPermission("owner")) return "owner";
-        if (player.hasPermission("admin")) return "admin";
-        if (player.hasPermission("dev")) return "dev";
-        if (player.hasPermission("moderador")) return "moderador";
-        if (player.hasPermission("helper")) return "helper";
-        if (player.hasPermission("builder")) return "builder";
-        if (player.hasPermission("exodus")) return "exodus";
-        if (player.hasPermission("divine")) return "divine";
-        if (player.hasPermission("nova")) return "nova";
-        return "default";
+    public void lightning(Player player) {
+        if (lightning) {
+            player.getLocation().getWorld().strikeLightningEffect(player.getLocation());
+        }
     }
+
+    public void getPlayerPermission(Player player) {
+        ConfigurationSection seccion = plugin.getConfig().getConfigurationSection("vip-join.permissions");
+
+        if (seccion != null) {
+            Set<String> nodos = seccion.getKeys(false);
+            for (String nodo : nodos) {
+                if (player.hasPermission(nodo)) {
+                    setConfigVariables(seccion, nodo);
+                    return;
+                }
+            }
+        }
+    }
+
+    private void setConfigVariables(ConfigurationSection permissionsSection, String node) {
+        String nodePath = "vip-join.permissions." + node;
+
+        // Usamos el this. este para hacer las variables globales y así usarlas en las otras funciones
+        this.sound = plugin.getConfig().getString(nodePath + ".sound");
+        this.volume = plugin.getConfig().getDouble(nodePath + ".volume");
+        this.pitch = plugin.getConfig().getDouble(nodePath + ".pitch");
+        this.lightning = plugin.getConfig().getBoolean(nodePath + ".lightning");
+        this.particle = plugin.getConfig().getString(nodePath + ".particle");
+        this.particleAmount = plugin.getConfig().getInt(nodePath + ".particle-amount");
+        this.offsetX = plugin.getConfig().getDouble(nodePath + ".offset-x");
+        this.offsetY = plugin.getConfig().getDouble(nodePath + ".offset-y");
+        this.offsetZ = plugin.getConfig().getDouble(nodePath + ".offset-z");
+        this.optionalValue = plugin.getConfig().getDouble(nodePath + ".optional-value");
+    }
+
 }
